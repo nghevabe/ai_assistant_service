@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Chat Analyzer</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .header p {
+      margin: 8px 0 0;
+      color: #666;
+    }
+
+    .chat-box {
+      padding: 20px;
+      min-height: 420px;
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bubble {
+      max-width: 85%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .bubble.user {
+      align-self: flex-end;
+      background: #d9fdd3;
+    }
+
+    .bubble.bot {
+      align-self: flex-start;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+    }
+
+    .bubble.loading {
+      font-style: italic;
+      color: #666;
+    }
+
+    .composer {
+      padding: 16px 20px 20px;
+      border-top: 1px solid #eee;
+      background: #fff;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .row input,
+    .row select {
+      flex: 1;
+      height: 44px;
+      border: 1px solid #d0d7de;
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+
+    .message-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    textarea {
+      flex: 1;
+      min-height: 90px;
+      resize: vertical;
+      border: 1px solid #d0d7de;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      font-family: Arial, sans-serif;
+    }
+
+    .right-actions {
+      width: 160px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button,
+    .file-label {
+      min-height: 44px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 12px;
+    }
+
+    button {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .file-label {
+      background: #eef2ff;
+      color: #1e3a8a;
+      border: 1px solid #c7d2fe;
+    }
+
+    #imageInput {
+      display: none;
+    }
+
+    .result-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .reply-item {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+    }
+
+    .image-preview-wrap {
+      margin-top: 12px;
+      display: none;
+    }
+
+    .image-preview-wrap img {
+      max-width: 220px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      display: block;
+      margin-top: 8px;
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: #555;
+      margin-top: 6px;
+    }
+
+    .small-btn {
+      background: #0f766e;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="header">
+        <h1>Demo Core AI</h1>
+        <p>Text tính năng xử lý và phân tích tin nhắn qua hình ảnh.</p>
+      </div>
+
+      <div id="chatBox" class="chat-box">
+        <div class="bubble bot">
+          Xin chào, bạn có thể nhập text hoặc chọn ảnh trong máy để phân tích.
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="row">
+          <select id="userGender">
+            <option value="Nam" selected>Giới tính tôi: Nam</option>
+            <option value="Nữ">Giới tính tôi: Nữ</option>
+          </select>
+
+          <select id="partnerGender">
+            <option value="Nữ" selected>Giới tính đối phương: Nữ</option>
+            <option value="Nam">Giới tính đối phương: Nam</option>
+          </select>
+
+          <select id="language">
+            <option value="en" selected>Language: English</option>
+            <option value="vi">Ngôn ngữ: Tiếng Việt</option>
+          </select>
+        </div>
+
+        <div class="message-row">
+          <textarea
+            id="messageInput"
+            placeholder="Nhập nội dung cần từ vấn..."
+          ></textarea>
+
+          <div class="right-actions">
+            <label for="imageInput" class="file-label">Chọn Ảnh</label>
+            <input id="imageInput" type="file" accept="image/*" />
+            <button id="uploadBtn" type="button">Upload Ảnh</button>
+            <button id="sendBtn" type="button">Phân Tích</button>
+          </div>
+        </div>
+
+        <div class="image-preview-wrap" id="imagePreviewWrap">
+          <div><strong>Ảnh đã chọn:</strong></div>
+          <img id="imagePreview" alt="preview" />
+          <div class="status-text" id="uploadStatus">Chưa upload</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxD64CUOVFMRr2nMJcJk7el0OnPpg6VI0",
+      authDomain: "ai-assistant-service-d86f3.firebaseapp.com",
+      projectId: "ai-assistant-service-d86f3",
+      storageBucket: "ai-assistant-service-d86f3.firebasestorage.app",
+      messagingSenderId: "240305059605",
+      appId: "1:240305059605:web:3bb1c82af0ab623927db1c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+
+    const chatBox = document.getElementById("chatBox");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const imageInput = document.getElementById("imageInput");
+    const imagePreviewWrap = document.getElementById("imagePreviewWrap");
+    const imagePreview = document.getElementById("imagePreview");
+    const uploadStatus = document.getElementById("uploadStatus");
+    const userGender = document.getElementById("userGender");
+    const partnerGender = document.getElementById("partnerGender");
+    const language = document.getElementById("language");
+
+    let selectedFile = null;
+    let uploadedImageUrl = "";
+
+    function addBubble(text, type = "bot") {
+      const div = document.createElement("div");
+      div.className = `bubble ${type}`;
+      div.textContent = text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return div;
+    }
+
+    function addHtmlBubble(html, type = "bot") {
+      const div = document.createElement("div");
+      div.className = `bubble ${type}`;
+      div.innerHTML = html;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return div;
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function generateFileName(file) {
+      const ext = file.name.includes(".")
+        ? file.name.split(".").pop()
+        : "jpg";
+      return `web_demo_uploads/${Date.now()}.${ext}`;
+    }
+
+    imageInput.addEventListener("change", (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      selectedFile = file;
+      uploadedImageUrl = "";
+      uploadStatus.textContent = "Đã chọn ảnh, chưa upload";
+      imagePreviewWrap.style.display = "block";
+      imagePreview.src = URL.createObjectURL(file);
+    });
+
+    uploadBtn.addEventListener("click", async () => {
+      if (!selectedFile) {
+        uploadStatus.textContent = "Bạn chưa chọn ảnh";
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      uploadStatus.textContent = "Đang upload ảnh lên Firebase Storage...";
+
+      try {
+        const filePath = generateFileName(selectedFile);
+        const storageRef = ref(storage, filePath);
+
+        const metadata = {
+          contentType: selectedFile.type || "image/jpeg"
+        };
+
+        await uploadBytes(storageRef, selectedFile, metadata);
+        uploadedImageUrl = await getDownloadURL(storageRef);
+
+        uploadStatus.textContent = "Upload thành công";
+        addBubble(`Ảnh đã upload thành công.\nURL: ${uploadedImageUrl}`, "bot");
+      } catch (error) {
+        console.error(error);
+        uploadStatus.textContent = "Upload thất bại";
+        addBubble(`Lỗi upload ảnh: ${error.message || error}`, "bot");
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+
+    async function sendMessage() {
+      const text = messageInput.value.trim();
+
+      if (!text && !uploadedImageUrl) {
+        addBubble("Bạn cần nhập text hoặc upload ảnh trước.", "bot");
+        return;
+      }
+
+      if (text) {
+        addBubble(text, "user");
+      } else {
+        addBubble("Người dùng đang gửi ảnh để phân tích.", "user");
+      }
+
+      messageInput.value = "";
+      sendBtn.disabled = true;
+
+      const loadingBubble = addBubble("Đang phân tích...", "bot loading");
+
+      try {
+        const response = await fetch("/analyze-message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text,
+            image_url: uploadedImageUrl,
+            user_gender: userGender.value,
+            partner_gender: partnerGender.value,
+            language: language.value
+          }),
+        });
+
+        const data = await response.json();
+        loadingBubble.remove();
+
+        if (!response.ok || !data.success) {
+          addBubble(data.error || "Có lỗi xảy ra khi gọi API.", "bot");
+          return;
+        }
+
+        const html = `
+          <div>
+            <div class="result-title">Phân tích:</div>
+            <div>${escapeHtml(data.analyze_content || "")}</div>
+
+            <div class="reply-item">
+              <strong>Gợi ý 1:</strong><br />
+              ${escapeHtml(data.message_content_1 || "")}
+            </div>
+
+            <div class="reply-item">
+              <strong>Gợi ý 2:</strong><br />
+              ${escapeHtml(data.message_content_2 || "")}
+            </div>
+
+            <div class="reply-item">
+              <strong>Gợi ý 3:</strong><br />
+              ${escapeHtml(data.message_content_3 || "")}
+            </div>
+          </div>
+        `;
+
+        addHtmlBubble(html, "bot");
+      } catch (error) {
+        loadingBubble.remove();
+        addBubble("Không thể kết nối tới server Flask.", "bot");
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+
+    messageInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
