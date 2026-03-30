@@ -14,41 +14,57 @@ Thông tin:
 - Giới tính của tôi: {my_gender}
 - Giới tính đối phương: {partner_gender}
 
-Thông tin bổ sung về ngữ cảnh:
+Ngữ cảnh đầu vào bên dưới là nội dung cuộc trò chuyện do người dùng cung cấp.
+
+Ngữ cảnh:
 {text_input}
 
 Nhiệm vụ của bạn:
 
-Bước 1: Phân tích tình hình, đánh giá cảm xúc và thái độ của đối phương.
-Bước 2: Đưa ra 3 tin nhắn phản hồi phù hợp để tôi có thể gửi lại.
+Bước 1: Phân tích tình hình dựa trên ngữ cảnh, bao gồm:
+- cảm xúc / thái độ của đối phương
+- mức độ quan tâm (nếu suy ra được)
+- mức độ thân mật hiện tại
+- lưu ý quan trọng khi trả lời
 
-Yêu cầu cho tin nhắn phản hồi:
-- Ngắn gọn
-- Tự nhiên như cách người thật nhắn tin
-- Không quá sến
+Bước 2: Dựa CHỈ trên ngữ cảnh ở trên, đưa ra 3 tin nhắn phản hồi phù hợp.
+
+Yêu cầu:
+- Phân tích ngắn gọn, thực tế, không suy diễn quá mức
+- Không bịa thêm thông tin ngoài ngữ cảnh
+- Nếu ngữ cảnh chưa rõ → ưu tiên nhận định trung tính
+- Tin nhắn:
+  - Ngắn gọn, tự nhiên như người thật nhắn tin
+  - Không quá sến, không gượng ép
+  - Mỗi tin nhắn tối đa 1–2 câu
+- 3 tin nhắn phải khác nhau rõ ràng về sắc thái:
+  1. An toàn, nhẹ nhàng
+  2. Flirt mạnh
+  3. Tự nhiên, có chút duyên hoặc tinh nghịch nếu phù hợp
+- Không thêm giải thích hay nội dung ngoài format
 
 Toàn bộ câu trả lời phải bằng Tiếng Việt.
 
-Cấu trúc output phải đúng định dạng sau:
+Output bắt buộc đúng chính xác theo định dạng:
 
 Nội dung phân tích:
 #analysis_start#
-<Phân tích và đánh giá tình hình ở đây>
+<nội dung phân tích>
 #analysis_end#
 
 Tin nhắn số 1:
 #mes1_start#
-<gợi ý tin nhắn 1 ở đây>
+(An toàn, nhẹ nhàng) <tin nhắn 1>
 #mes1_end#
 
 Tin nhắn số 2:
 #mes2_start#
-<gợi ý tin nhắn 2 ở đây>
+(Flirt mạnh) <tin nhắn 2>
 #mes2_end#
 
 Tin nhắn số 3:
 #mes3_start#
-<gợi ý tin nhắn 3 ở đây>
+(Tự nhiên) <tin nhắn 3>
 #mes3_end#
 """.strip()
 
@@ -59,18 +75,34 @@ Information:
 - My gender: {my_gender}
 - Other person's gender: {partner_gender}
 
-Additional context:
+The input below is a conversation provided by the user.
+
+Context:
 {text_input}
 
 Your tasks:
 
-Step 1: Analyze the situation, emotions, and attitude of the other person.
-Step 2: Provide 3 suitable reply messages that I can send back.
+Step 1: Analyze the situation based on the context, including:
+- the other person's emotion or attitude
+- their level of interest (if inferable)
+- the current level of closeness
+- important cautions when replying
 
-Requirements for the reply messages:
-- Concise
-- Natural like real texting
-- Not too cheesy
+Step 2: Based ONLY on the context above, provide 3 suitable reply messages.
+
+Requirements:
+- The analysis must be concise and realistic
+- Do not invent details not present in the context
+- If the context is unclear → stay neutral
+- Messages:
+  - Concise and natural like real texting
+  - Not too cheesy or forced
+  - Each message max 1–2 sentences
+- The 3 messages must clearly differ in tone:
+  1. Safe and gentle
+  2. Strong flirt
+  3. Natural with a light playful/charming touch if appropriate
+- Do not include explanations or extra text outside the format
 
 The entire response must be in English.
 
@@ -78,22 +110,22 @@ The output must strictly follow this format:
 
 Analysis:
 #analysis_start#
-<Your analysis here>
+<analysis content>
 #analysis_end#
 
 Message 1:
 #mes1_start#
-<reply suggestion 1 here>
+(Safe and gentle) <message 1>
 #mes1_end#
 
 Message 2:
 #mes2_start#
-<reply suggestion 2 here>
+(Strong flirt) <message 2>
 #mes2_end#
 
 Message 3:
 #mes3_start#
-<reply suggestion 3 here>
+(Natural) <message 3>
 #mes3_end#
 """.strip()
 
@@ -345,5 +377,117 @@ Suggested message 2:
 Suggested message 3:
 #mes3_start#
 <suggested message>
+#mes3_end#
+""".strip()
+
+
+def prompt_for_mes(
+    my_gender: str = "Nam",
+    partner_gender: str = "Nữ",
+    text_input: str = "",
+    language: str = "English"
+) -> str:
+    lang = language.strip().lower()
+
+    if lang in ["vi", "vietnamese", "tiếng việt", "viet"]:
+        return f"""
+Bạn là một chuyên gia tư vấn giao tiếp trong các mối quan hệ tình cảm.
+
+Thông tin:
+- Giới tính của tôi: {my_gender}
+- Giới tính đối phương: {partner_gender}
+
+Ngữ cảnh đầu vào bên dưới là kết quả phân tích từ bước trước, có thể bao gồm:
+- nội dung cuộc trò chuyện
+- cảm xúc / thái độ của đối phương
+- mức độ thân mật
+- tín hiệu ngữ cảnh từ hình ảnh hoặc đoạn chat
+
+Ngữ cảnh:
+{text_input}
+
+Nhiệm vụ:
+Dựa CHỈ trên phần ngữ cảnh ở trên, hãy đề xuất 3 tin nhắn phản hồi phù hợp để tôi có thể gửi lại.
+
+Yêu cầu:
+- Ngắn gọn, tự nhiên như người thật nhắn tin
+- Không quá sến, không quá gượng ép
+- Mỗi tin nhắn tối đa 1–2 câu
+- 3 tin nhắn phải khác nhau về sắc thái:
+  1. Một tin nhắn an toàn, nhẹ nhàng
+  2. Một tin nhắn flirt mạnh
+  3. Một tin nhắn tự nhiên, có chút duyên hoặc tinh nghịch nhẹ nếu phù hợp
+- Không bịa thêm chi tiết không có trong ngữ cảnh
+- Nếu ngữ cảnh chưa đủ rõ, hãy ưu tiên các câu trả lời trung tính, dễ dùng
+- Không giải thích, không nhận xét, không thêm tiêu đề hoặc nội dung ngoài format yêu cầu
+
+Toàn bộ câu trả lời phải bằng Tiếng Việt.
+
+Output bắt buộc đúng chính xác theo định dạng sau:
+
+Tin nhắn số 1:
+#mes1_start#
+(An toàn, nhẹ nhàng) <nội dung tin nhắn 1>
+#mes1_end#
+
+Tin nhắn số 2:
+#mes2_start#
+(Flirt mạnh) <nội dung tin nhắn 2>
+#mes2_end#
+
+Tin nhắn số 3:
+#mes3_start#
+(Tự nhiên) <nội dung tin nhắn 3>
+#mes3_end#
+""".strip()
+
+    return f"""
+You are an expert in relationship communication.
+
+Information:
+- My gender: {my_gender}
+- Other person's gender: {partner_gender}
+
+The input context below is the result of a previous analysis step. It may include:
+- chat content
+- the other person's emotion or attitude
+- level of closeness
+- contextual signals inferred from an image or conversation
+
+Context:
+{text_input}
+
+Task:
+Based ONLY on the context above, provide 3 suitable reply messages that I can send back.
+
+Requirements:
+- Concise and natural like real texting
+- Not too cheesy or overly dramatic
+- Each message should be no more than 1–2 sentences
+- The 3 messages must have different tones:
+  1. One safe and gentle option
+  2. One strong flirt option
+  3. One natural option with a light playful or charming touch if appropriate
+- Do not invent details that are not present in the context
+- If the context is unclear, prefer neutral and safe replies
+- Do not include explanations, commentary, or any extra text outside the required format
+
+The entire response must be in English.
+
+The output must strictly follow this exact format:
+
+Message 1:
+#mes1_start#
+(Safe and gentle) <reply suggestion 1>
+#mes1_end#
+
+Message 2:
+#mes2_start#
+(Strong flirt) <reply suggestion 2>
+#mes2_end#
+
+Message 3:
+#mes3_start#
+(Natural) <reply suggestion 3>
 #mes3_end#
 """.strip()
