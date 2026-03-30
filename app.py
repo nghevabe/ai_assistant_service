@@ -2,8 +2,8 @@ import os
 from flask import Flask, request, jsonify, render_template
 from openai import OpenAI
 
-from handle_result import content_parsing_text, content_parsing_img
-from prompt_util import prompt_with_img, prompt_with_text
+from handle_result import content_parsing_text, content_parsing_img, content_parsing_step_2
+from prompt_util import prompt_with_img, prompt_with_text, prompt_for_mes
 
 app = Flask(__name__)
 
@@ -11,11 +11,14 @@ app = Flask(__name__)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # MODEL_NAME = "gpt-4.1-mini"
 # model_config = "gpt-5-mini"
-MODEL_NAME = "gpt-4.1"
+# MODEL_NAME = "gpt-4.1"
+MODEL_NAME = "gpt-5"
+
 
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
+
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -86,6 +89,40 @@ def analyze_message():
 
         analyze_content, mes1_content, mes2_content, mes3_content = parser_func(output_text)
 
+        print("mes1_content Step 1: " + mes1_content)
+        print("Done Step 1")
+
+        # Step 2
+
+        prompt_step_2 = prompt_for_mes(
+            my_gender=user_gender,
+            partner_gender=partner_gender,
+            text_input=analyze_content,
+            language=language,
+        )
+        content_step_2 = [
+            {"type": "input_text", "text": prompt_step_2},
+        ]
+        parser_func = content_parsing_step_2
+
+        response_step_2 = client.responses.create(
+            model=MODEL_NAME,
+            input=[
+                {
+                    "role": "user",
+                    "content": content_step_2,
+                }
+            ]
+        )
+
+        output_text_2 = response_step_2.output_text or ""
+
+        mes1_contents, mes2_contents, mes3_contents = parser_func(output_text_2)
+
+        print("mes1_contents Step 2: "+mes1_contents)
+        print("Done Step 2")
+        # Step 2
+
         return jsonify({
             "success": True,
             "model": MODEL_NAME,
@@ -93,9 +130,9 @@ def analyze_message():
             "language": language,
             "result": output_text,
             "analyze_content": analyze_content,
-            "message_content_1": mes1_content,
-            "message_content_2": mes2_content,
-            "message_content_3": mes3_content,
+            "message_content_1": mes1_contents,
+            "message_content_2": mes2_contents,
+            "message_content_3": mes3_contents,
         }), 200
 
     except Exception as e:
